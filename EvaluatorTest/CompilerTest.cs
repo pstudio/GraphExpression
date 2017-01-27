@@ -28,7 +28,7 @@ namespace EvaluatorTest
             const string expression = "2+x";
             var tokens = _lexer.Tokenize(expression);
             var rpn = _parser.Parse(tokens);
-            var bytecode = _compiler.Compile(rpn.Expression);
+            var bytecode = _compiler.Compile(rpn);
 
             Assert.IsTrue(bytecode.Length == 7);
             Assert.IsTrue(bytecode[0] == (byte)Interpreter.ByteCodeOp.Push);

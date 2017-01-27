@@ -202,21 +202,21 @@ namespace EvaluatorTest
             var tokens = _lexer.Tokenize(expression);
             var result = _parser.Parse(tokens);
 
-            Assert.IsTrue(result.ParsedWithoutErrors);
-            Assert.IsTrue(result.Expression.Count == 13);
-            Assert.IsTrue(result.Expression[0].Type == Token.TokenType.Number);
-            Assert.IsTrue(result.Expression[1].Type == Token.TokenType.Number);
-            Assert.IsTrue(result.Expression[2].Type == Token.TokenType.Variable);
-            Assert.IsTrue(result.Expression[3].Type == Token.TokenType.Multiplication);
-            Assert.IsTrue(result.Expression[4].Type == Token.TokenType.Number);
-            Assert.IsTrue(result.Expression[5].Type == Token.TokenType.Variable);
-            Assert.IsTrue(result.Expression[6].Type == Token.TokenType.Subtraction);
-            Assert.IsTrue(result.Expression[7].Type == Token.TokenType.Number);
-            Assert.IsTrue(result.Expression[8].Type == Token.TokenType.Number);
-            Assert.IsTrue(result.Expression[9].Type == Token.TokenType.Power);
-            Assert.IsTrue(result.Expression[10].Type == Token.TokenType.Power);
-            Assert.IsTrue(result.Expression[11].Type == Token.TokenType.Division);
-            Assert.IsTrue(result.Expression[12].Type == Token.TokenType.Addition);
+            //Assert.IsTrue(result.ParsedWithoutErrors);
+            Assert.IsTrue(result.Count == 13);
+            Assert.IsTrue(result[0].Type == Token.TokenType.Number);
+            Assert.IsTrue(result[1].Type == Token.TokenType.Number);
+            Assert.IsTrue(result[2].Type == Token.TokenType.Variable);
+            Assert.IsTrue(result[3].Type == Token.TokenType.Multiplication);
+            Assert.IsTrue(result[4].Type == Token.TokenType.Number);
+            Assert.IsTrue(result[5].Type == Token.TokenType.Variable);
+            Assert.IsTrue(result[6].Type == Token.TokenType.Subtraction);
+            Assert.IsTrue(result[7].Type == Token.TokenType.Number);
+            Assert.IsTrue(result[8].Type == Token.TokenType.Number);
+            Assert.IsTrue(result[9].Type == Token.TokenType.Power);
+            Assert.IsTrue(result[10].Type == Token.TokenType.Power);
+            Assert.IsTrue(result[11].Type == Token.TokenType.Division);
+            Assert.IsTrue(result[12].Type == Token.TokenType.Addition);
         }
     }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
 using GraphExpressionEvaluator.Lexer;
@@ -26,6 +27,51 @@ namespace GraphExpressionEvaluator.Parser
         * 
         */
 
+        #region Custom Exceptions
+
+        public class ParsingException : Exception
+        {
+            public ParsingException(string message) : base(message) { }
+        }
+
+        public class UnknownTokensException : ParsingException
+        {
+            public UnknownTokensException(string message) : base(message) { }
+        }
+
+        public class MismatchedParenthesisException : ParsingException
+        {
+            public MismatchedParenthesisException(string message) : base(message) { }
+        }
+
+        public class ConsecutiveOperatorsException : ParsingException
+        {
+            public Token.TokenType Operator1 { get; set; }
+            public Token.TokenType Operator2 { get; set; }
+
+            public ConsecutiveOperatorsException(string message) : base(message) { }
+
+            public ConsecutiveOperatorsException(string message, Token.TokenType op1, Token.TokenType op2) : base(message)
+            {
+                Operator1 = op1;
+                Operator2 = op2;
+            }
+        }
+
+        public class MissingOperandException : ParsingException
+        {
+            public Token.TokenType Operator { get; set; }
+
+            public MissingOperandException(string message) : base(message) { }
+
+            public MissingOperandException(string message, Token.TokenType op) : base(message)
+            {
+                Operator = op;
+            }
+        }
+
+        #endregion
+
         /// <summary>
         /// The result of a parse attempt.
         /// Will contain the parsed tree and any errors encountered.
@@ -43,17 +89,22 @@ namespace GraphExpressionEvaluator.Parser
         /// </summary>
         /// <param name="tokens">The list of tokens to be parsed</param>
         /// <returns>A ParseResult which will contain the RPN if parsing was successful or otherwise the error encountered</returns>
-        public ParseResult Parse(IList<Token> tokens)
+        /// <exception cref="UnknownTokensException">Thrown if unknown tokens are encountered in the token list</exception>
+        /// <exception cref="ConsecutiveOperatorsException">Thrown if two operators are right next to each other</exception>
+        /// <exception cref="MissingOperandException">Thrown if an operator is missing an argument</exception>
+        /// <exception cref="MismatchedParenthesisException">Thrown if there is missing one or more parenthesises</exception>
+        public IList<Token> Parse(IList<Token> tokens)
         {
-            var result = new ParseResult();
+            //var result = new ParseResult();
 
             // Preprocessing steps
 
             // We will not bother parsing the list if it contains unknown tokens
             if (ContainsUnknownTokens(tokens))
             {
-                result.Error = "Expression contains token(s) of Unknown type. Expression cannot be parsed";
-                return result;
+                throw new UnknownTokensException("Expression contains token(s) of Unknown type. Expression cannot be parsed");
+                //result.Error = "Expression contains token(s) of Unknown type. Expression cannot be parsed";
+                //return result;
             }
 
             // Expand the token list for any implicit (multiplication) tokens
@@ -65,39 +116,43 @@ namespace GraphExpressionEvaluator.Parser
             var handledTokens = HandleUnaryPlusMinus(expandedTokens);
 
             // Validate that there are no illegal sequence of tokens
-            try
-            {
-                if (!ValidateLegalTokenSequence(handledTokens))
-                {
-                    // never happens currently
-                    result.Error = "Expression contains illegal sequnece of tokens";
-                    return result;
-                }
-            }
-            catch (ConsecutiveOperatorsException e)
-            {
-                result.Error = $"Expression contains consecutive operators: '{e.Operator1.OperatorToString()},{e.Operator2.OperatorToString()}'";
-                return result;
-            }
-            catch (MissingOperandException e)
-            {
-                result.Error = $"Operator '{e.Operator.OperatorToString()}' is missing an operand";
-                return result;
-            }
+            //try
+            //{
+            //    ValidateLegalTokenSequence(handledTokens);
+            //    //if (!ValidateLegalTokenSequence(handledTokens))
+            //    //{
+            //    //    // never happens currently
+            //    //    result.Error = "Expression contains illegal sequence of tokens";
+            //    //    return result;
+            //    //}
+            //}
+            //catch (ConsecutiveOperatorsException e)
+            //{
+            //    result.Error = $"Expression contains consecutive operators: '{e.Operator1.OperatorToString()},{e.Operator2.OperatorToString()}'";
+            //    return result;
+            //}
+            //catch (MissingOperandException e)
+            //{
+            //    result.Error = $"Operator '{e.Operator.OperatorToString()}' is missing an operand";
+            //    return result;
+            //}
 
-            // Parse the expression from infix form to RPN
-            try
-            {
-                result.Expression = ShuntingYard(handledTokens);
-            }
-            catch (MismatchedParenthesisException)
-            {
-                result.Error = "There is a mismatch of parenthesis";
-                return result;
-            }
+            //// Parse the expression from infix form to RPN
+            //try
+            //{
+            //    result.Expression = ShuntingYard(handledTokens);
+            //}
+            //catch (MismatchedParenthesisException)
+            //{
+            //    result.Error = "There is a mismatch of parenthesis";
+            //    return result;
+            //}
+
+            ValidateLegalTokenSequence(handledTokens);
+            return ShuntingYard(handledTokens);
 
 
-            return result;
+            //return result;
         }
 
         #region Preprocessing
@@ -138,30 +193,6 @@ namespace GraphExpressionEvaluator.Parser
         #endregion
 
         #region Parsing
-
-        #region Custom Exceptions
-
-        public class ParsingException : Exception
-        {
-        }
-
-        public class MismatchedParenthesisException : ParsingException
-        {
-        }
-
-        public class ConsecutiveOperatorsException : ParsingException
-        {
-            public Token.TokenType Operator1 { get; set; }
-            public Token.TokenType Operator2 { get; set; }
-        }
-
-        public class MissingOperandException : ParsingException
-        {
-            public Token.TokenType Operator { get; set; }
-        }
-
-        #endregion
-
 
         private static readonly Token.TokenType[] Operators =
         {
@@ -232,8 +263,8 @@ namespace GraphExpressionEvaluator.Parser
         }
 
         // If a sequence contains consecutive operators it is invalid
-        // If a sequnece contains an operator with a missing operand it is invalid
-        private bool ValidateLegalTokenSequence(IList<Token> tokens)
+        // If a sequence contains an operator with a missing operand it is invalid
+        private void ValidateLegalTokenSequence(IList<Token> tokens)
         {
             // 2-3*x*(5+x)^2/2
             for (int i = 0; i < tokens.Count; i++)
@@ -246,11 +277,14 @@ namespace GraphExpressionEvaluator.Parser
                 // If a sequence contains consecutive operators it is invalid
                 if (i > 0 && Operators.Contains(tokens[i-1].Type))
                 {
-                    throw new ConsecutiveOperatorsException()
-                    {
-                        Operator1 = tokens[i-1].Type,
-                        Operator2 = tokens[i].Type
-                    };
+                    var op1 = tokens[i - 1].Type;
+                    var op2 = tokens[i].Type;
+                    throw new ConsecutiveOperatorsException(
+                        $"Expression contains consecutive operators: '{op1.OperatorToString()},{op2.OperatorToString()}'", op1, op2);
+                    //{
+                    //    Operator1 = tokens[i-1].Type,
+                    //    Operator2 = tokens[i].Type
+                    //};
                 }
 
                 // If a sequnece contains an operator with a missing operand it is invalid
@@ -258,15 +292,14 @@ namespace GraphExpressionEvaluator.Parser
                 // is if the operator is at the beginning or end of the expression
                 if (i == 0 || i == tokens.Count - 1)
                 {
-                    throw new MissingOperandException()
-                    {
-                        Operator = tokens[i].Type
-                    };
+                    var op = tokens[i].Type;
+                    throw new MissingOperandException($"Operator '{op.OperatorToString()}' is missing an operand", op);
+                    //{
+                    //    Operator = tokens[i].Type
+                    //};
                 }
             }
-
-            return true; // Currently meaningless since exceptions are used to tell if there is an illegal token sequence
-        }     
+        }
 
         // Shunting Yard Algorithm - https://en.wikipedia.org/wiki/Shunting-yard_algorithm
         // Parse the tokens from Infix form to Reverse Polish Notation
@@ -330,7 +363,7 @@ namespace GraphExpressionEvaluator.Parser
                         // If the stack runs out without finding a left parenthesis, then there are mismatched parentheses.
                         if (stack.Count == 0)
                         {
-                            throw new MismatchedParenthesisException();
+                            throw new MismatchedParenthesisException("There is a mismatch of parenthesis");
                         }
                     }
 
@@ -348,7 +381,7 @@ namespace GraphExpressionEvaluator.Parser
                 // If the operator token on the top of the stack is a parenthesis, then there are mismatched parentheses
                 if (op.Type == Token.TokenType.OpenParenthesis)
                 {
-                    throw new MismatchedParenthesisException();
+                    throw new MismatchedParenthesisException("There is a mismatch of parenthesis");
                 }
 
                 // Pop the operator onto the output queue.

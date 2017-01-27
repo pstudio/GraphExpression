@@ -31,7 +31,11 @@ namespace GraphExpressionEvaluator.Compiler
 
         #endregion
 
-
+        /// <summary>
+        /// Compiles the token list in Reverse Polish Notation into byte code
+        /// </summary>
+        /// <param name="rpn">Token list in Reverse Polish Notation</param>
+        /// <returns>The compiled expression in custom bytecode</returns>
         public byte[] Compile(IList<Token> rpn)
         {
             // We estimate the size of our byte code array to be #tokens * 4.

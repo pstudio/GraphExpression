@@ -30,7 +30,7 @@ namespace EvaluatorTest
             const string expression = "x^2+2x+4";
             var tokens = _lexer.Tokenize(expression);
             var rpn = _parser.Parse(tokens);
-            var code = _compiler.Compile(rpn.Expression);
+            var code = _compiler.Compile(rpn);
 
             const float tolerance = float.Epsilon;
             Assert.IsTrue(Math.Abs(_interpreter.Evaluate(code, 0) - 4) < tolerance);
@@ -48,7 +48,7 @@ namespace EvaluatorTest
             string expression = "2/x";
             var tokens = _lexer.Tokenize(expression);
             var rpn = _parser.Parse(tokens);
-            var code = _compiler.Compile(rpn.Expression);
+            var code = _compiler.Compile(rpn);
 
             try
             {
@@ -63,7 +63,7 @@ namespace EvaluatorTest
             expression = "x/(2-x)";
             tokens = _lexer.Tokenize(expression);
             rpn = _parser.Parse(tokens);
-            code = _compiler.Compile(rpn.Expression);
+            code = _compiler.Compile(rpn);
 
             try
             {
