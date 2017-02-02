@@ -1,0 +1,60 @@
+﻿<Window x:Class="GraphExpressionDrawer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:local="clr-namespace:GraphExpressionDrawer"
+        xmlns:vm="clr-namespace:GraphExpressionDrawer.ViewModels"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <DockPanel>
+            <Expander DockPanel.Dock="Left" ExpandDirection="Right" Header="Graphs" IsExpanded="True">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Width="200" Margin="10">
+                        <TextBlock>Graph Expression:</TextBlock>
+                        <TextBox>x+2</TextBox>
+                        <Button DockPanel.Dock="Right">Add</Button>
+                        <TextBlock Foreground="Red" FontSize="10" FontWeight="Bold" Visibility="Hidden">Some Error</TextBlock>
+                    </StackPanel>
+                    <ListView></ListView>
+                </DockPanel>
+            </Expander>
+            <DockPanel Name="GraphPanel" d:DataContext="{d:DesignInstance vm:GraphSystemViewModel}">
+                <DockPanel.Resources>
+                    <local:ComparisonConverter x:Key="ComparisonConverter"/>
+                </DockPanel.Resources>
+                <Expander DockPanel.Dock="Bottom" ExpandDirection="Up" Header="Coordinates Settings">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Column="0" Grid.Row="0">Min X:</TextBlock>
+                        <xctk:DecimalUpDown Grid.Column="1" Grid.Row="0" Value="{Binding CoordSettings.XStart, Mode=TwoWay}" Increment="1.0"/>
+                        <TextBlock Grid.Column="2" Grid.Row="0">Max X:</TextBlock>
+                        <xctk:DecimalUpDown Grid.Column="3" Grid.Row="0" Value="{Binding CoordSettings.XEnd, Mode=TwoWay}" Increment="1.0"/>
+                        <TextBlock Grid.Column="0" Grid.Row="1">Min Y:</TextBlock>
+                        <xctk:DecimalUpDown Grid.Column="1" Grid.Row="1" Value="{Binding CoordSettings.YStart, Mode=TwoWay}" Increment="1.0"/>
+                        <TextBlock Grid.Column="2" Grid.Row="1">Max Y:</TextBlock>
+                        <xctk:DecimalUpDown Grid.Column="3" Grid.Row="1" Value="{Binding CoordSettings.YEnd, Mode=TwoWay}" Increment="1.0"/>
+                        <TextBlock Grid.Column="0" Grid.Row="2">Normalize Axis:</TextBlock>
+                        <RadioButton Grid.Column="1" Grid.Row="2" GroupName="NormalizeAxis" IsChecked="{Binding Path=AxisNormalization, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static vm:AxisNormalization.None}}">None</RadioButton>
+                        <RadioButton Grid.Column="2" Grid.Row="2" GroupName="NormalizeAxis" IsChecked="{Binding Path=AxisNormalization, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static vm:AxisNormalization.X}}">X-Axis</RadioButton>
+                        <RadioButton Grid.Column="3" Grid.Row="2" GroupName="NormalizeAxis" IsChecked="{Binding Path=AxisNormalization, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static vm:AxisNormalization.Y}}">Y-Axis</RadioButton>
+                        
+                    </Grid>
+                </Expander>
+                <Canvas Name="GraphCanvas"/>
+            </DockPanel>
+        </DockPanel>
+    </Grid>
+</Window>
