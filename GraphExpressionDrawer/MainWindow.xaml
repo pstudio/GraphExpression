@@ -7,21 +7,31 @@
         xmlns:local="clr-namespace:GraphExpressionDrawer"
         xmlns:vm="clr-namespace:GraphExpressionDrawer.ViewModels"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
+        Title="MainWindow" Height="350" Width="525" d:DataContext="{d:DesignInstance vm:GraphSystemViewModel}">
     <Grid>
         <DockPanel>
             <Expander DockPanel.Dock="Left" ExpandDirection="Right" Header="Graphs" IsExpanded="True">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Bottom" Width="200" Margin="10">
                         <TextBlock>Graph Expression:</TextBlock>
-                        <TextBox>x+2</TextBox>
-                        <Button DockPanel.Dock="Right">Add</Button>
+                        <TextBox Name="ExpressionTextBox">x+2</TextBox>
+                        <Button Name="AddGraphButton" DockPanel.Dock="Right" Click="AddGraphButton_OnClick">Add</Button>
                         <TextBlock Foreground="Red" FontSize="10" FontWeight="Bold" Visibility="Hidden">Some Error</TextBlock>
                     </StackPanel>
-                    <ListView></ListView>
+                    <ListView ItemsSource="{Binding Graphs}" HorizontalContentAlignment="Stretch">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel d:DataContext="{d:DesignInstance vm:GraphViewModel}">
+                                    <CheckBox DockPanel.Dock="Left" IsChecked="{Binding DrawGraph, Mode=TwoWay}"/>
+                                    <xctk:ColorPicker DockPanel.Dock="Right" SelectedColor="{Binding GraphColor, Mode=TwoWay}" ColorMode="ColorCanvas" UsingAlphaChannel="False" StandardButtonHeader="Color Palette" AdvancedButtonHeader="Color Picker" ShowDropDownButton="False" Width="30"/>
+                                    <TextBlock Text="{Binding Expression}" Margin="5, 0"/>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
                 </DockPanel>
             </Expander>
-            <DockPanel Name="GraphPanel" d:DataContext="{d:DesignInstance vm:GraphSystemViewModel}">
+            <DockPanel Name="GraphPanel">
                 <DockPanel.Resources>
                     <local:ComparisonConverter x:Key="ComparisonConverter"/>
                 </DockPanel.Resources>

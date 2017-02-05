@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.ObjectModel;
+using System.Runtime.Remoting.Channels;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using GraphExpressionDrawer.Models;
+using GraphExpressionEvaluator.Interpreter;
 
 namespace GraphExpressionDrawer.ViewModels
 {
@@ -19,8 +22,12 @@ namespace GraphExpressionDrawer.ViewModels
     /// </summary>
     public class GraphSystemViewModel : ObservableObject
     {
+        private static readonly Interpreter Interpreter = new Interpreter();
+
         private readonly Canvas _canvas;
         private Matrix _worldToScreenMatrix;
+
+        public ObservableCollection<GraphViewModel> Graphs { get; }
 
         public CoordSettings CoordSettings { get; }
 
@@ -31,41 +38,43 @@ namespace GraphExpressionDrawer.ViewModels
         {
             _canvas = canvas;
 
+            Graphs = new ObservableCollection<GraphViewModel>();
+
             CoordSettings = new CoordSettings();
             AxisNormalization = AxisNormalization.None;
 
-            _canvas.SizeChanged += (sender, e) => DrawGraphs(); //Canvas_SizeChanged;
-            CoordSettings.PropertyChanged += (sender, e) => DrawGraphs(); //CoordSettings_PropertyChanged;
+            _canvas.SizeChanged += (sender, e) => DrawGraphSystem(); //Canvas_SizeChanged;
+            CoordSettings.PropertyChanged += (sender, e) => DrawGraphSystem(); //CoordSettings_PropertyChanged;
+            Graphs.CollectionChanged += (sender, e) => DrawGraphSystem();
         }
 
-        private void CoordSettings_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        public void AddGraph(string expression)
         {
-            throw new NotImplementedException();
+            var graph = new GraphViewModel(expression);
+            graph.PropertyChanged += (sender, e) => DrawGraphSystem();
+            Graphs.Add(graph);
         }
 
-        private void Canvas_SizeChanged(object sender, System.Windows.SizeChangedEventArgs e)
-        {
-            
-        }
-
-        private void DrawGraphs()
+        private void DrawGraphSystem()
         {
             UpdateTransformationMatrix();
             _canvas.Children.Clear();
             DrawAxis();
+            DrawGraphs();
 
-            var ellipse = new Ellipse()
-            {
-                Stroke = Brushes.Blue,
-                Fill = Brushes.BlueViolet,
-                StrokeThickness = 5,
-                Width = 50,
-                Height = 50
-            };
-            var origin = WorldToScreen(new Point(0, 1));
-            Canvas.SetLeft(ellipse, origin.X);
-            Canvas.SetTop(ellipse, origin.Y);
-            _canvas.Children.Add(ellipse);
+            //var ellipse = new Ellipse()
+            //{
+            //    Stroke = Brushes.Blue,
+            //    Fill = Brushes.BlueViolet,
+            //    StrokeThickness = 5,
+            //    Width = 50,
+            //    Height = 50
+            //};
+
+            //var origin = WorldToScreen(new Point(0, 1));
+            //Canvas.SetLeft(ellipse, origin.X);
+            //Canvas.SetTop(ellipse, origin.Y);
+            //_canvas.Children.Add(ellipse);
         }
 
         private void UpdateTransformationMatrix()
@@ -95,6 +104,36 @@ namespace GraphExpressionDrawer.ViewModels
 
             _canvas.Children.Add(xAxisPath);
             _canvas.Children.Add(yAxisPath);
+        }
+
+        private void DrawGraphs()
+        {
+            foreach (var graph in Graphs)
+            {
+                if (graph.DrawGraph)
+                    DrawGraph(graph);
+            }
+        }
+
+        private void DrawGraph(GraphViewModel graph)
+        {
+            var pointCollection = new PointCollection();
+
+            for (float x = CoordSettings.XStart; x <= CoordSettings.XEnd; x++)
+            {
+                var y = Interpreter.Evaluate(graph.Graph.ByteCode, x);
+                var point = new Point(x, y);
+                pointCollection.Add(WorldToScreen(point));
+            }
+
+            var polyline = new Polyline()
+            {
+                Stroke = new SolidColorBrush(graph.GraphColor),
+                StrokeThickness = 1,
+                Points = pointCollection
+            };
+
+            _canvas.Children.Add(polyline);
         }
 
         private Point WorldToScreen(Point point) => _worldToScreenMatrix.Transform(point);

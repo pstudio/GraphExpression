@@ -21,11 +21,19 @@ namespace GraphExpressionDrawer
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly GraphSystemViewModel _graphSystem;
+
         public MainWindow()
         {
             InitializeComponent();
 
-            GraphPanel.DataContext = new GraphSystemViewModel(GraphCanvas);
+            _graphSystem = new GraphSystemViewModel(GraphCanvas);
+            DataContext = _graphSystem;
+        }
+
+        private void AddGraphButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            _graphSystem.AddGraph(ExpressionTextBox.Text);
         }
     }
 }
