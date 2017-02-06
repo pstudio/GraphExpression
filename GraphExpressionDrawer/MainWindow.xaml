@@ -14,7 +14,7 @@
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Bottom" Width="200" Margin="10">
                         <TextBlock>Graph Expression:</TextBlock>
-                        <TextBox Name="ExpressionTextBox">x+2</TextBox>
+                        <TextBox Name="ExpressionTextBox">x^2-5</TextBox>
                         <Button Name="AddGraphButton" DockPanel.Dock="Right" Click="AddGraphButton_OnClick">Add</Button>
                         <TextBlock Foreground="Red" FontSize="10" FontWeight="Bold" Visibility="Hidden">Some Error</TextBlock>
                     </StackPanel>
@@ -47,6 +47,8 @@
                             <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Column="0" Grid.Row="0">Min X:</TextBlock>
                         <xctk:DecimalUpDown Grid.Column="1" Grid.Row="0" Value="{Binding CoordSettings.XStart, Mode=TwoWay}" Increment="1.0"/>
@@ -60,7 +62,11 @@
                         <RadioButton Grid.Column="1" Grid.Row="2" GroupName="NormalizeAxis" IsChecked="{Binding Path=AxisNormalization, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static vm:AxisNormalization.None}}">None</RadioButton>
                         <RadioButton Grid.Column="2" Grid.Row="2" GroupName="NormalizeAxis" IsChecked="{Binding Path=AxisNormalization, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static vm:AxisNormalization.X}}">X-Axis</RadioButton>
                         <RadioButton Grid.Column="3" Grid.Row="2" GroupName="NormalizeAxis" IsChecked="{Binding Path=AxisNormalization, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static vm:AxisNormalization.Y}}">Y-Axis</RadioButton>
-                        
+                        <TextBlock Grid.Column="0" Grid.Row="3">Render Method:</TextBlock>
+                        <RadioButton Grid.Column="1" Grid.Row="3" GroupName="RenderMethod" IsChecked="{Binding Path=GraphRenderMethod, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static vm:GraphRenderMethod.Linear}}">Linear</RadioButton>
+                        <RadioButton Grid.Column="2" Grid.Row="3" GroupName="RenderMethod" IsChecked="{Binding Path=GraphRenderMethod, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static vm:GraphRenderMethod.Bezier}}">Bezier</RadioButton>
+                        <TextBlock Grid.Column="0" Grid.Row="4">Render Quality:</TextBlock>
+                        <Slider Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="4" Minimum="1" Maximum="10" Value="{Binding GraphResolution, Mode=TwoWay}"/>
                     </Grid>
                 </Expander>
                 <Canvas Name="GraphCanvas"/>

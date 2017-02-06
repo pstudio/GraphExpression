@@ -65,6 +65,16 @@ namespace GraphExpressionEvaluator.Interpreter
             _numArray = new byte[4];
         } 
 
+        /// <summary>
+        /// Evaluates expression bytecode
+        /// </summary>
+        /// <param name="code">The expression in bytecode form</param>
+        /// <param name="x">The value of 'x'</param>
+        /// <returns>The result of the expression for the given value of x</returns>
+        /// <exception cref="InterpreterDivideByZeroException">Thrown if the evaluator has to make a division by zero. Could for instance happen if x is 0 and the expression divides by x</exception>
+        /// <exception cref="InterpreterTooFewArgsException">Too many arguments have been provided</exception>
+        /// <exception cref="InterpreterTooManyArgsException">An operator is missing an argument</exception>
+        /// <exception cref="InterpreterUnknownOpCodeException">Thrown if the interpreter encounters an unknown opcode in the bytecode</exception>
         public float Evaluate(byte[] code, float x)
         {
             // We use the Postfix algorithm for Reverse Polish Notation to 'compile' the input

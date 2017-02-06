@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Runtime.Remoting.Channels;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,6 +18,12 @@ namespace GraphExpressionDrawer.ViewModels
         Y
     }
 
+    public enum GraphRenderMethod
+    {
+        Linear,
+        Bezier
+    }
+
     /// <summary>
     /// View-model for graphs in a Cartesian coordinate system
     /// </summary>
@@ -25,14 +32,49 @@ namespace GraphExpressionDrawer.ViewModels
         private static readonly Interpreter Interpreter = new Interpreter();
 
         private readonly Canvas _canvas;
+        private RectangleGeometry _graphClippingBounds;
+
         private Matrix _worldToScreenMatrix;
+        private GraphRenderMethod _graphRenderMethod;
+        private int _graphResolution;
 
         public ObservableCollection<GraphViewModel> Graphs { get; }
 
         public CoordSettings CoordSettings { get; }
 
-        // Axis normalization
+        /// <summary>
+        ///  Axis normalization
+        /// </summary>
         public AxisNormalization AxisNormalization { get; set; }
+
+        /// <summary>
+        /// Indicates how the graphs should be drawn.
+        /// Linear - The graph consists of straight lines
+        /// Bezier - The graph is built from bezier curves that approximate the graphs curvature
+        /// </summary>
+        public GraphRenderMethod GraphRenderMethod
+        {
+            get { return _graphRenderMethod; }
+            set
+            {
+                _graphRenderMethod = value; 
+                DrawGraphSystem();
+            }
+        }
+
+        /// <summary>
+        /// Indicates how high a resolution should be used to draw the graphs.
+        /// Higher number indicates better quality.
+        /// </summary>
+        public int GraphResolution
+        {
+            get { return _graphResolution; }
+            set
+            {
+                _graphResolution = value; 
+                DrawGraphSystem();
+            }
+        }
 
         public GraphSystemViewModel(Canvas canvas)
         {
@@ -42,6 +84,8 @@ namespace GraphExpressionDrawer.ViewModels
 
             CoordSettings = new CoordSettings();
             AxisNormalization = AxisNormalization.None;
+            GraphRenderMethod = GraphRenderMethod.Linear;
+            GraphResolution = 1;
 
             _canvas.SizeChanged += (sender, e) => DrawGraphSystem(); //Canvas_SizeChanged;
             CoordSettings.PropertyChanged += (sender, e) => DrawGraphSystem(); //CoordSettings_PropertyChanged;
@@ -55,8 +99,13 @@ namespace GraphExpressionDrawer.ViewModels
             Graphs.Add(graph);
         }
 
+        // Graph drawing is based on:
+        // http://csharphelper.com/blog/2014/09/draw-graph-wpf-c/
+
         private void DrawGraphSystem()
         {
+            _graphClippingBounds = new RectangleGeometry(new Rect(new Size(_canvas.ActualWidth, _canvas.ActualHeight)));
+
             UpdateTransformationMatrix();
             _canvas.Children.Clear();
             DrawAxis();
@@ -96,11 +145,15 @@ namespace GraphExpressionDrawer.ViewModels
             var xAxisGroup = new GeometryGroup();
             xAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(CoordSettings.XStart, 0)), WorldToScreen(new Point(CoordSettings.XEnd, 0))));
             var xAxisPath = new Path() {StrokeThickness = 1, Stroke = Brushes.Black, Data = xAxisGroup};
+            xAxisPath.Clip = _graphClippingBounds;
+            xAxisPath.ClipToBounds = true;
 
             // Y-axis
             var yAxisGroup = new GeometryGroup();
             yAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(0, CoordSettings.YStart)), WorldToScreen(new Point(0, CoordSettings.YEnd))));
             var yAxisPath = new Path() { StrokeThickness = 1, Stroke = Brushes.Black, Data = yAxisGroup };
+            yAxisPath.Clip = _graphClippingBounds;
+            yAxisPath.ClipToBounds = true;
 
             _canvas.Children.Add(xAxisPath);
             _canvas.Children.Add(yAxisPath);
@@ -117,26 +170,76 @@ namespace GraphExpressionDrawer.ViewModels
 
         private void DrawGraph(GraphViewModel graph)
         {
-            var pointCollection = new PointCollection();
+            var points = new PointCollection();
 
-            for (float x = CoordSettings.XStart; x <= CoordSettings.XEnd; x++)
+
+            for (float x = CoordSettings.XStart - 1; x <= CoordSettings.XEnd + 1; x += 1f/GraphResolution) // we expand the range to iterate over to prevent any weird tangent errors at the ends of the graph
             {
-                var y = Interpreter.Evaluate(graph.Graph.ByteCode, x);
-                var point = new Point(x, y);
-                pointCollection.Add(WorldToScreen(point));
+                try
+                {
+                    var y = Interpreter.Evaluate(graph.Graph.ByteCode, x);
+                    var point = new Point(x, y);
+                    points.Add(WorldToScreen(point));
+                }
+                catch (Interpreter.InterpreterException e)
+                {
+                    MessageBox.Show($"Graph: '{graph.Expression}' could not be drawn.{Environment.NewLine}{e}", "Draw Graph Failure",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                    //Console.WriteLine(e);
+                }
             }
 
-            var polyline = new Polyline()
+            UIElement graphElement;
+
+            switch (GraphRenderMethod)
+            {
+                case GraphRenderMethod.Linear:
+                    graphElement = DrawLineGraph(graph, points);
+                    break;
+                case GraphRenderMethod.Bezier:
+                    graphElement = DrawBezierGraph(graph, points);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            graphElement.Clip = _graphClippingBounds;
+            graphElement.ClipToBounds = true;
+
+            _canvas.Children.Add(graphElement);
+        }
+
+        private static Path DrawBezierGraph(GraphViewModel graph, PointCollection points)
+        {
+            Point[] controlPoints1, controlPoints2;
+            ovp.BezierSpline.GetCurveControlPoints(points.ToArray(), out controlPoints1, out controlPoints2);
+
+            var segments = new PathSegmentCollection();
+            for (int i = 0; i < controlPoints1.Length; i++)
+            {
+                segments.Add(new BezierSegment(controlPoints1[i], controlPoints2[i], points[i + 1], true));
+            }
+
+            var figure = new PathFigure(points[0], segments, false);
+            var geometry = new PathGeometry(new[] { figure });
+            var path = new Path()
             {
                 Stroke = new SolidColorBrush(graph.GraphColor),
                 StrokeThickness = 1,
-                Points = pointCollection
+                Data = geometry
             };
 
-            _canvas.Children.Add(polyline);
+            return path;
         }
+
+        private static Polyline DrawLineGraph(GraphViewModel graph, PointCollection points) => new Polyline()
+        {
+            Stroke = new SolidColorBrush(graph.GraphColor),
+            StrokeThickness = 1,
+            Points = points
+        };
 
         private Point WorldToScreen(Point point) => _worldToScreenMatrix.Transform(point);
     }
-
 }
