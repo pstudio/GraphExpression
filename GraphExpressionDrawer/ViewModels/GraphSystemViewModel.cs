@@ -8,9 +8,13 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using GraphExpressionDrawer.Models;
 using GraphExpressionEvaluator.Interpreter;
+using ovp;
 
 namespace GraphExpressionDrawer.ViewModels
 {
+
+    #region Enums
+
     public enum AxisNormalization
     {
         None,
@@ -23,6 +27,9 @@ namespace GraphExpressionDrawer.ViewModels
         Linear,
         Bezier
     }
+
+    #endregion
+
 
     /// <summary>
     /// View-model for graphs in a Cartesian coordinate system
@@ -39,6 +46,7 @@ namespace GraphExpressionDrawer.ViewModels
         private int _graphResolution;
 
         public ObservableCollection<GraphViewModel> Graphs { get; }
+        public GraphViewModel CurrentGraph { get; set; }
 
         public CoordSettings CoordSettings { get; }
 
@@ -81,6 +89,7 @@ namespace GraphExpressionDrawer.ViewModels
             _canvas = canvas;
 
             Graphs = new ObservableCollection<GraphViewModel>();
+            NewGraph();
 
             CoordSettings = new CoordSettings();
             AxisNormalization = AxisNormalization.None;
@@ -92,12 +101,29 @@ namespace GraphExpressionDrawer.ViewModels
             Graphs.CollectionChanged += (sender, e) => DrawGraphSystem();
         }
 
-        public void AddGraph(string expression)
+        private void NewGraph()
         {
-            var graph = new GraphViewModel(expression);
-            graph.PropertyChanged += (sender, e) => DrawGraphSystem();
-            Graphs.Add(graph);
+            CurrentGraph = new GraphViewModel("");
+            CurrentGraph.GraphColor = Color.FromRgb(0, 0, 0);
+            CurrentGraph.PropertyChanged += (sender, e) => DrawGraphSystem();
+            OnPropertyChanged(nameof(CurrentGraph));
+
         }
+
+        public void AddGraph()
+        {
+            //var graph = new GraphViewModel(CurrentGraph.Expression);
+            //graph.PropertyChanged += (sender, e) => DrawGraphSystem();
+            //Graphs.Add(graph);
+
+            //CurrentGraph.Expression = "";
+
+            Graphs.Add(CurrentGraph);
+
+            NewGraph();
+        }
+
+        #region Graph Drawing
 
         // Graph drawing is based on:
         // http://csharphelper.com/blog/2014/09/draw-graph-wpf-c/
@@ -143,15 +169,17 @@ namespace GraphExpressionDrawer.ViewModels
         {
             // X-axis
             var xAxisGroup = new GeometryGroup();
-            xAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(CoordSettings.XStart, 0)), WorldToScreen(new Point(CoordSettings.XEnd, 0))));
+            xAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(CoordSettings.XStart, 0)),
+                WorldToScreen(new Point(CoordSettings.XEnd, 0))));
             var xAxisPath = new Path() {StrokeThickness = 1, Stroke = Brushes.Black, Data = xAxisGroup};
             xAxisPath.Clip = _graphClippingBounds;
             xAxisPath.ClipToBounds = true;
 
             // Y-axis
             var yAxisGroup = new GeometryGroup();
-            yAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(0, CoordSettings.YStart)), WorldToScreen(new Point(0, CoordSettings.YEnd))));
-            var yAxisPath = new Path() { StrokeThickness = 1, Stroke = Brushes.Black, Data = yAxisGroup };
+            yAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(0, CoordSettings.YStart)),
+                WorldToScreen(new Point(0, CoordSettings.YEnd))));
+            var yAxisPath = new Path() {StrokeThickness = 1, Stroke = Brushes.Black, Data = yAxisGroup};
             yAxisPath.Clip = _graphClippingBounds;
             yAxisPath.ClipToBounds = true;
 
@@ -166,6 +194,11 @@ namespace GraphExpressionDrawer.ViewModels
                 if (graph.DrawGraph)
                     DrawGraph(graph);
             }
+
+            if (CurrentGraph.Graph.Valid && !CurrentGraph.Expression.Equals(String.Empty))
+            {
+                DrawGraph(CurrentGraph);
+            }
         }
 
         private void DrawGraph(GraphViewModel graph)
@@ -173,7 +206,8 @@ namespace GraphExpressionDrawer.ViewModels
             var points = new PointCollection();
 
 
-            for (float x = CoordSettings.XStart - 1; x <= CoordSettings.XEnd + 1; x += 1f/GraphResolution) // we expand the range to iterate over to prevent any weird tangent errors at the ends of the graph
+            for (float x = CoordSettings.XStart - 1; x <= CoordSettings.XEnd + 1; x += 1f/GraphResolution)
+                // we expand the range to iterate over to prevent any weird tangent errors at the ends of the graph
             {
                 try
                 {
@@ -183,7 +217,8 @@ namespace GraphExpressionDrawer.ViewModels
                 }
                 catch (Interpreter.InterpreterException e)
                 {
-                    MessageBox.Show($"Graph: '{graph.Expression}' could not be drawn.{Environment.NewLine}{e}", "Draw Graph Failure",
+                    MessageBox.Show($"Graph: '{graph.Expression}' could not be drawn.{Environment.NewLine}{e}",
+                        "Draw Graph Failure",
                         MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                     //Console.WriteLine(e);
@@ -213,7 +248,7 @@ namespace GraphExpressionDrawer.ViewModels
         private static Path DrawBezierGraph(GraphViewModel graph, PointCollection points)
         {
             Point[] controlPoints1, controlPoints2;
-            ovp.BezierSpline.GetCurveControlPoints(points.ToArray(), out controlPoints1, out controlPoints2);
+            BezierSpline.GetCurveControlPoints(points.ToArray(), out controlPoints1, out controlPoints2);
 
             var segments = new PathSegmentCollection();
             for (int i = 0; i < controlPoints1.Length; i++)
@@ -222,7 +257,7 @@ namespace GraphExpressionDrawer.ViewModels
             }
 
             var figure = new PathFigure(points[0], segments, false);
-            var geometry = new PathGeometry(new[] { figure });
+            var geometry = new PathGeometry(new[] {figure});
             var path = new Path()
             {
                 Stroke = new SolidColorBrush(graph.GraphColor),
@@ -241,5 +276,8 @@ namespace GraphExpressionDrawer.ViewModels
         };
 
         private Point WorldToScreen(Point point) => _worldToScreenMatrix.Transform(point);
+
+        #endregion
+
     }
 }

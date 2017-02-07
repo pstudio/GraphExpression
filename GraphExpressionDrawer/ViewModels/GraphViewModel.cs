@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Media;
 using GraphExpressionDrawer.Models;
 
@@ -23,6 +24,7 @@ namespace GraphExpressionDrawer.ViewModels
             get { return Graph.Expression; }
             set
             {
+                //Console.WriteLine(value);
                 Graph.Expression = value;
                 OnPropertyChanged(nameof(Expression));
                 OnPropertyChanged(nameof(ErrorMessage));

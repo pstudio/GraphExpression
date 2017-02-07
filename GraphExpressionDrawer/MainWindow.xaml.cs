@@ -33,7 +33,8 @@ namespace GraphExpressionDrawer
 
         private void AddGraphButton_OnClick(object sender, RoutedEventArgs e)
         {
-            _graphSystem.AddGraph(ExpressionTextBox.Text);
+            //_graphSystem.AddGraph(ExpressionTextBox.Text);
+            _graphSystem.AddGraph();
         }
     }
 }

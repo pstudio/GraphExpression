@@ -12,11 +12,11 @@
         <DockPanel>
             <Expander DockPanel.Dock="Left" ExpandDirection="Right" Header="Graphs" IsExpanded="True">
                 <DockPanel>
-                    <StackPanel DockPanel.Dock="Bottom" Width="200" Margin="10">
+                    <StackPanel Name="ExpressionPanel" DockPanel.Dock="Bottom" Width="200" Margin="10">
                         <TextBlock>Graph Expression:</TextBlock>
-                        <TextBox Name="ExpressionTextBox">x^2-5</TextBox>
+                        <TextBox Name="ExpressionTextBox" Text="{Binding CurrentGraph.Expression, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <Button Name="AddGraphButton" DockPanel.Dock="Right" Click="AddGraphButton_OnClick">Add</Button>
-                        <TextBlock Foreground="Red" FontSize="10" FontWeight="Bold" Visibility="Hidden">Some Error</TextBlock>
+                        <TextBlock Name="ErrorTextBlock" Foreground="Red" FontSize="10" FontWeight="Bold" Visibility="{Binding CurrentGraph.ErrorMessageVisibility, Mode=OneWay}" Text="{Binding CurrentGraph.ErrorMessage, Mode=OneWay}"/>
                     </StackPanel>
                     <ListView ItemsSource="{Binding Graphs}" HorizontalContentAlignment="Stretch">
                         <ListView.ItemTemplate>
