@@ -82,6 +82,8 @@
     <Compile Include="ComparisonConverter.cs" />
     <Compile Include="ObservableObject.cs" />
     <Compile Include="Spline\BezierSpline.cs" />
+    <Compile Include="ViewModels\Commands\AddGraphCommand.cs" />
+    <Compile Include="ViewModels\Commands\RelayCommand.cs" />
     <Compile Include="ViewModels\CoordSettings.cs" />
     <Compile Include="ViewModels\GraphSystemViewModel.cs" />
     <Compile Include="ViewModels\GraphViewModel.cs" />

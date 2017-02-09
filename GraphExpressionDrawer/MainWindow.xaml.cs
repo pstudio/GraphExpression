@@ -30,11 +30,5 @@ namespace GraphExpressionDrawer
             _graphSystem = new GraphSystemViewModel(GraphCanvas);
             DataContext = _graphSystem;
         }
-
-        private void AddGraphButton_OnClick(object sender, RoutedEventArgs e)
-        {
-            //_graphSystem.AddGraph(ExpressionTextBox.Text);
-            _graphSystem.AddGraph();
-        }
     }
 }

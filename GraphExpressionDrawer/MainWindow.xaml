@@ -15,7 +15,7 @@
                     <StackPanel Name="ExpressionPanel" DockPanel.Dock="Bottom" Width="200" Margin="10">
                         <TextBlock>Graph Expression:</TextBlock>
                         <TextBox Name="ExpressionTextBox" Text="{Binding CurrentGraph.Expression, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <Button Name="AddGraphButton" DockPanel.Dock="Right" Click="AddGraphButton_OnClick">Add</Button>
+                        <Button Name="AddGraphButton" DockPanel.Dock="Right" Command="{Binding AddGraphCommand}">Add</Button>
                         <TextBlock Name="ErrorTextBlock" Foreground="Red" FontSize="10" FontWeight="Bold" Visibility="{Binding CurrentGraph.ErrorMessageVisibility, Mode=OneWay}" Text="{Binding CurrentGraph.ErrorMessage, Mode=OneWay}"/>
                     </StackPanel>
                     <ListView ItemsSource="{Binding Graphs}" HorizontalContentAlignment="Stretch">

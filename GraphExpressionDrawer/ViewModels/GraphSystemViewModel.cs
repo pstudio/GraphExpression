@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using GraphExpressionDrawer.Models;
+using GraphExpressionDrawer.ViewModels.Commands;
 using GraphExpressionEvaluator.Interpreter;
 using ovp;
 
@@ -47,6 +48,8 @@ namespace GraphExpressionDrawer.ViewModels
 
         public ObservableCollection<GraphViewModel> Graphs { get; }
         public GraphViewModel CurrentGraph { get; set; }
+
+        public RelayCommand AddGraphCommand { get; private set; }
 
         public CoordSettings CoordSettings { get; }
 
@@ -95,6 +98,8 @@ namespace GraphExpressionDrawer.ViewModels
             AxisNormalization = AxisNormalization.None;
             GraphRenderMethod = GraphRenderMethod.Linear;
             GraphResolution = 1;
+
+            AddGraphCommand = new RelayCommand((parameter) => AddGraph(), (parameter) => CurrentGraphValid());
 
             _canvas.SizeChanged += (sender, e) => DrawGraphSystem(); //Canvas_SizeChanged;
             CoordSettings.PropertyChanged += (sender, e) => DrawGraphSystem(); //CoordSettings_PropertyChanged;
@@ -171,17 +176,27 @@ namespace GraphExpressionDrawer.ViewModels
             var xAxisGroup = new GeometryGroup();
             xAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(CoordSettings.XStart, 0)),
                 WorldToScreen(new Point(CoordSettings.XEnd, 0))));
-            var xAxisPath = new Path() {StrokeThickness = 1, Stroke = Brushes.Black, Data = xAxisGroup};
-            xAxisPath.Clip = _graphClippingBounds;
-            xAxisPath.ClipToBounds = true;
+            var xAxisPath = new Path
+            {
+                StrokeThickness = 1,
+                Stroke = Brushes.Black,
+                Data = xAxisGroup,
+                Clip = _graphClippingBounds,
+                ClipToBounds = true
+            };
 
             // Y-axis
             var yAxisGroup = new GeometryGroup();
             yAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(0, CoordSettings.YStart)),
                 WorldToScreen(new Point(0, CoordSettings.YEnd))));
-            var yAxisPath = new Path() {StrokeThickness = 1, Stroke = Brushes.Black, Data = yAxisGroup};
-            yAxisPath.Clip = _graphClippingBounds;
-            yAxisPath.ClipToBounds = true;
+            var yAxisPath = new Path
+            {
+                StrokeThickness = 1,
+                Stroke = Brushes.Black,
+                Data = yAxisGroup,
+                Clip = _graphClippingBounds,
+                ClipToBounds = true
+            };
 
             _canvas.Children.Add(xAxisPath);
             _canvas.Children.Add(yAxisPath);
@@ -189,16 +204,20 @@ namespace GraphExpressionDrawer.ViewModels
 
         private void DrawGraphs()
         {
-            foreach (var graph in Graphs)
+            foreach (var graph in Graphs.Where(graph => graph.DrawGraph))
             {
-                if (graph.DrawGraph)
-                    DrawGraph(graph);
+                DrawGraph(graph);
             }
 
-            if (CurrentGraph.Graph.Valid && !CurrentGraph.Expression.Equals(String.Empty))
+            if (CurrentGraphValid())
             {
                 DrawGraph(CurrentGraph);
             }
+        }
+
+        private bool CurrentGraphValid()
+        {
+            return CurrentGraph.Graph.Valid && !CurrentGraph.Expression.Equals(string.Empty);
         }
 
         private void DrawGraph(GraphViewModel graph)
