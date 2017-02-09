@@ -2,6 +2,13 @@
 
 namespace GraphExpressionDrawer.ViewModels
 {
+    public enum AxisNormalization
+    {
+        None,
+        X,
+        Y
+    }
+
     // Settings for a Cartesian coordinate system
     public class CoordSettings : ObservableObject
     {
@@ -17,7 +24,14 @@ namespace GraphExpressionDrawer.ViewModels
         public float XStart
         {
             get { return _xStart; }
-            set { if (value < XEnd) _xStart = value; OnPropertyChanged(); }
+            set
+            {
+                if (value >= XEnd) return;
+                if (value == XStart) return;
+                
+                _xStart = value;
+                OnPropertyChanged();
+            }
         }
 
         /// <summary>
@@ -27,7 +41,12 @@ namespace GraphExpressionDrawer.ViewModels
         public float XEnd
         {
             get { return _xEnd; }
-            set { if (value > XStart) _xEnd = value; OnPropertyChanged(); }
+            set {
+                if (value <= XStart) return;
+                if (value == XEnd) return;
+
+                _xEnd = value;
+                OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -37,7 +56,14 @@ namespace GraphExpressionDrawer.ViewModels
         public float YStart
         {
             get { return _yStart; }
-            set { if (value < YEnd) _yStart = value; OnPropertyChanged(); }
+            set
+            {
+                if (value >= YEnd) return;
+                if (value == YStart) return;
+
+                _yStart = value;
+                OnPropertyChanged();
+            }
         }
 
         /// <summary>
@@ -47,7 +73,14 @@ namespace GraphExpressionDrawer.ViewModels
         public float YEnd
         {
             get { return _yEnd; }
-            set { if (value > YStart) _yEnd = value; OnPropertyChanged(); }
+            set
+            {
+                if (value <= YStart) return;
+                if (value == YEnd) return;
+
+                _yEnd = value;
+                OnPropertyChanged();
+            }
         }
 
         /// <summary>
@@ -86,6 +119,30 @@ namespace GraphExpressionDrawer.ViewModels
         /// YEnd    = +10
         /// </summary>
         public CoordSettings() : this(-10.0f, +10.0f, -10.0f, +10.0f) { }
+
+        public void NormalizeAxis(AxisNormalization axis, float width, float height)
+        {
+            switch (axis)
+            {
+                case AxisNormalization.None:
+                    break;
+                case AxisNormalization.X:
+                    YEnd = YStart + CalcNewAxisRange(XStart, XEnd, width, height);
+                    break;
+                case AxisNormalization.Y:
+                    XEnd = XStart + CalcNewAxisRange(YStart, YEnd, height, width);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private float CalcNewAxisRange(float start, float end, float srcLength, float dstLength)
+        {
+            var steps = Math.Abs(end - start);
+            var stepLength = srcLength / steps;
+            return dstLength / stepLength;
+        }
     }
 
 }

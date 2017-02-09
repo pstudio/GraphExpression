@@ -16,13 +16,6 @@ namespace GraphExpressionDrawer.ViewModels
 
     #region Enums
 
-    public enum AxisNormalization
-    {
-        None,
-        X,
-        Y
-    }
-
     public enum GraphRenderMethod
     {
         Linear,
@@ -45,6 +38,7 @@ namespace GraphExpressionDrawer.ViewModels
         private Matrix _worldToScreenMatrix;
         private GraphRenderMethod _graphRenderMethod;
         private int _graphResolution;
+        private AxisNormalization _axisNormalization;
 
         public ObservableCollection<GraphViewModel> Graphs { get; }
         public GraphViewModel CurrentGraph { get; set; }
@@ -56,7 +50,15 @@ namespace GraphExpressionDrawer.ViewModels
         /// <summary>
         ///  Axis normalization
         /// </summary>
-        public AxisNormalization AxisNormalization { get; set; }
+        public AxisNormalization AxisNormalization
+        {
+            get { return _axisNormalization; }
+            set
+            {
+                _axisNormalization = value;
+                CoordSettings.NormalizeAxis(_axisNormalization, (float) _canvas.ActualWidth, (float) _canvas.ActualHeight);
+            }
+        }
 
         /// <summary>
         /// Indicates how the graphs should be drawn.
@@ -102,7 +104,11 @@ namespace GraphExpressionDrawer.ViewModels
             AddGraphCommand = new RelayCommand((parameter) => AddGraph(), (parameter) => CurrentGraphValid());
 
             _canvas.SizeChanged += (sender, e) => DrawGraphSystem(); //Canvas_SizeChanged;
-            CoordSettings.PropertyChanged += (sender, e) => DrawGraphSystem(); //CoordSettings_PropertyChanged;
+            CoordSettings.PropertyChanged += (sender, e) =>
+            {
+                CoordSettings.NormalizeAxis(AxisNormalization, (float) _canvas.ActualWidth, (float) _canvas.ActualHeight);
+                DrawGraphSystem();
+            };
             Graphs.CollectionChanged += (sender, e) => DrawGraphSystem();
         }
 
@@ -174,28 +180,18 @@ namespace GraphExpressionDrawer.ViewModels
         {
             // X-axis
             var xAxisGroup = new GeometryGroup();
-            xAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(CoordSettings.XStart, 0)),
-                WorldToScreen(new Point(CoordSettings.XEnd, 0))));
+            xAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(CoordSettings.XStart, 0)), WorldToScreen(new Point(CoordSettings.XEnd, 0))));
             var xAxisPath = new Path
             {
-                StrokeThickness = 1,
-                Stroke = Brushes.Black,
-                Data = xAxisGroup,
-                Clip = _graphClippingBounds,
-                ClipToBounds = true
+                StrokeThickness = 1, Stroke = Brushes.Black, Data = xAxisGroup, Clip = _graphClippingBounds, ClipToBounds = true
             };
 
             // Y-axis
             var yAxisGroup = new GeometryGroup();
-            yAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(0, CoordSettings.YStart)),
-                WorldToScreen(new Point(0, CoordSettings.YEnd))));
+            yAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(0, CoordSettings.YStart)), WorldToScreen(new Point(0, CoordSettings.YEnd))));
             var yAxisPath = new Path
             {
-                StrokeThickness = 1,
-                Stroke = Brushes.Black,
-                Data = yAxisGroup,
-                Clip = _graphClippingBounds,
-                ClipToBounds = true
+                StrokeThickness = 1, Stroke = Brushes.Black, Data = yAxisGroup, Clip = _graphClippingBounds, ClipToBounds = true
             };
 
             _canvas.Children.Add(xAxisPath);
@@ -236,9 +232,7 @@ namespace GraphExpressionDrawer.ViewModels
                 }
                 catch (Interpreter.InterpreterException e)
                 {
-                    MessageBox.Show($"Graph: '{graph.Expression}' could not be drawn.{Environment.NewLine}{e}",
-                        "Draw Graph Failure",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Graph: '{graph.Expression}' could not be drawn.{Environment.NewLine}{e}", "Draw Graph Failure", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                     //Console.WriteLine(e);
                 }
@@ -279,9 +273,7 @@ namespace GraphExpressionDrawer.ViewModels
             var geometry = new PathGeometry(new[] {figure});
             var path = new Path()
             {
-                Stroke = new SolidColorBrush(graph.GraphColor),
-                StrokeThickness = 1,
-                Data = geometry
+                Stroke = new SolidColorBrush(graph.GraphColor), StrokeThickness = 1, Data = geometry
             };
 
             return path;
@@ -289,14 +281,11 @@ namespace GraphExpressionDrawer.ViewModels
 
         private static Polyline DrawLineGraph(GraphViewModel graph, PointCollection points) => new Polyline()
         {
-            Stroke = new SolidColorBrush(graph.GraphColor),
-            StrokeThickness = 1,
-            Points = points
+            Stroke = new SolidColorBrush(graph.GraphColor), StrokeThickness = 1, Points = points
         };
 
         private Point WorldToScreen(Point point) => _worldToScreenMatrix.Transform(point);
 
         #endregion
-
     }
 }
