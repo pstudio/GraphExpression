@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.Remoting.Channels;
 using System.Windows;
@@ -103,13 +104,15 @@ namespace GraphExpressionDrawer.ViewModels
 
             AddGraphCommand = new RelayCommand((parameter) => AddGraph(), (parameter) => CurrentGraphValid());
 
-            _canvas.SizeChanged += (sender, e) => DrawGraphSystem(); //Canvas_SizeChanged;
-            CoordSettings.PropertyChanged += (sender, e) =>
-            {
-                CoordSettings.NormalizeAxis(AxisNormalization, (float) _canvas.ActualWidth, (float) _canvas.ActualHeight);
-                DrawGraphSystem();
-            };
+            _canvas.SizeChanged += OnChanged; //DrawGraphSystem(); //Canvas_SizeChanged;
+            CoordSettings.PropertyChanged += OnChanged;
             Graphs.CollectionChanged += (sender, e) => DrawGraphSystem();
+        }
+
+        private void OnChanged(object sender, EventArgs e)
+        {
+            CoordSettings.NormalizeAxis(AxisNormalization, (float) _canvas.ActualWidth, (float) _canvas.ActualHeight);
+            DrawGraphSystem();
         }
 
         private void NewGraph()

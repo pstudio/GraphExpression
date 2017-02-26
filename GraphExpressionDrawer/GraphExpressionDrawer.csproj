@@ -80,6 +80,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="ComparisonConverter.cs" />
+    <Compile Include="NegateConverter.cs" />
     <Compile Include="ObservableObject.cs" />
     <Compile Include="Spline\BezierSpline.cs" />
     <Compile Include="ViewModels\Commands\RelayCommand.cs" />
