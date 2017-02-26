@@ -40,6 +40,8 @@ namespace GraphExpressionDrawer.ViewModels
         private GraphRenderMethod _graphRenderMethod;
         private int _graphResolution;
         private AxisNormalization _axisNormalization;
+        private int _xUnitMark = 1;
+        private int _yUnitMark = 1;
 
         public ObservableCollection<GraphViewModel> Graphs { get; }
         public GraphViewModel CurrentGraph { get; set; }
@@ -47,6 +49,26 @@ namespace GraphExpressionDrawer.ViewModels
         public RelayCommand AddGraphCommand { get; private set; }
 
         public CoordSettings CoordSettings { get; }
+
+        public int XUnitMark
+        {
+            get { return _xUnitMark; }
+            set
+            {
+                _xUnitMark = Math.Max(value, 1); 
+                DrawGraphSystem();
+            }
+        }
+
+        public int YUnitMark
+        {
+            get { return _yUnitMark; }
+            set
+            {
+                _yUnitMark = Math.Max(value, 1);
+                DrawGraphSystem();
+            }
+        }
 
         /// <summary>
         ///  Axis normalization
@@ -101,6 +123,7 @@ namespace GraphExpressionDrawer.ViewModels
             AxisNormalization = AxisNormalization.None;
             GraphRenderMethod = GraphRenderMethod.Linear;
             GraphResolution = 1;
+            XUnitMark = YUnitMark = 1;
 
             AddGraphCommand = new RelayCommand((parameter) => AddGraph(), (parameter) => CurrentGraphValid());
 
@@ -184,6 +207,20 @@ namespace GraphExpressionDrawer.ViewModels
             // X-axis
             var xAxisGroup = new GeometryGroup();
             xAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(CoordSettings.XStart, 0)), WorldToScreen(new Point(CoordSettings.XEnd, 0))));
+
+            for (int x = (int) Math.Floor(CoordSettings.XStart); x < (int) Math.Ceiling(CoordSettings.XEnd); x++)
+            {
+                if (x % XUnitMark == 0)
+                {
+                    var start = WorldToScreen(new Point(x, 0));
+                    var end = WorldToScreen(new Point(x, 0));
+                    start.Y -= 10;
+                    end.Y += 10;
+
+                    xAxisGroup.Children.Add(new LineGeometry(start, end));
+                }
+            }
+
             var xAxisPath = new Path
             {
                 StrokeThickness = 1, Stroke = Brushes.Black, Data = xAxisGroup, Clip = _graphClippingBounds, ClipToBounds = true
@@ -192,6 +229,20 @@ namespace GraphExpressionDrawer.ViewModels
             // Y-axis
             var yAxisGroup = new GeometryGroup();
             yAxisGroup.Children.Add(new LineGeometry(WorldToScreen(new Point(0, CoordSettings.YStart)), WorldToScreen(new Point(0, CoordSettings.YEnd))));
+
+            for (int y = (int)Math.Floor(CoordSettings.YStart); y < (int)Math.Ceiling(CoordSettings.YEnd); y++)
+            {
+                if (y % YUnitMark == 0)
+                {
+                    var start = WorldToScreen(new Point(0, y));
+                    var end = WorldToScreen(new Point(0, y));
+                    start.X -= 10;
+                    end.X += 10;
+
+                    yAxisGroup.Children.Add(new LineGeometry(start, end));
+                }
+            }
+
             var yAxisPath = new Path
             {
                 StrokeThickness = 1, Stroke = Brushes.Black, Data = yAxisGroup, Clip = _graphClippingBounds, ClipToBounds = true
